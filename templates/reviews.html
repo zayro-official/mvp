@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="{{ 'ja' if request.query_params.get('lang') == 'ja' else 'en' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ 'レビュー一覧' if request.query_params.get('lang') == 'ja' else 'Reviews' }} - ZAYRO</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .language-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .language-toggle a {
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .language-toggle a:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .review-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .reviewer-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .reviewer-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .rating {
+            color: var(--warning-color);
+            font-size: 1.2rem;
+        }
+
+        .review-text {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tag {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            color: white;
+        }
+
+        .tag.taste { background-color: #ff9900; }
+        .tag.service { background-color: #3399ff; }
+        .tag.atmosphere { background-color: #33cc99; }
+
+        .reply-section {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .reply-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .reply-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .status-replied {
+            color: var(--success-color);
+        }
+
+        .status-pending {
+            color: var(--warning-color);
+        }
+
+        .reply-text {
+            color: var(--secondary-color);
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .review-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .reviewer-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>{{ 'レビュー一覧' if request.query_params.get('lang') == 'ja' else 'Reviews' }}</h1>
+            <div class="language-toggle">
+                <a href="?lang=en">EN</a>
+                <a href="?lang=ja">JA</a>
+            </div>
+        </header>
+
+        <!-- Review 1 -->
+        <div class="review-card">
+            <div class="review-header">
+                <div class="reviewer-info">
+                    <span class="reviewer-name">John Smith</span>
+                    <span class="rating">★★★★★</span>
+                </div>
+            </div>
+            <p class="review-text">
+                The food was absolutely amazing! The service was impeccable and the atmosphere was perfect for our anniversary dinner. Will definitely come back again.
+            </p>
+            <div class="tags">
+                <span class="tag taste">{{ '味' if request.query_params.get('lang') == 'ja' else 'Taste' }}</span>
+                <span class="tag service">{{ 'サービス' if request.query_params.get('lang') == 'ja' else 'Service' }}</span>
+                <span class="tag atmosphere">{{ '雰囲気' if request.query_params.get('lang') == 'ja' else 'Atmosphere' }}</span>
+            </div>
+            <div class="reply-section">
+                <div class="reply-header">
+                    <span class="reply-status status-replied">
+                        ✅ {{ '返信済み' if request.query_params.get('lang') == 'ja' else 'Replied' }}
+                    </span>
+                </div>
+                <p class="reply-text">
+                    {{ 'ご来店ありがとうございます！素晴らしいレビューをいただき、スタッフ一同大変嬉しく思います。またのご来店を心よりお待ちしております。' if request.query_params.get('lang') == 'ja' else 'Thank you for your wonderful review! We are delighted to hear that you enjoyed your anniversary dinner with us. We look forward to welcoming you back soon!' }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Review 2 -->
+        <div class="review-card">
+            <div class="review-header">
+                <div class="reviewer-info">
+                    <span class="reviewer-name">Sarah Johnson</span>
+                    <span class="rating">★★★★☆</span>
+                </div>
+            </div>
+            <p class="review-text">
+                Great food and friendly staff. The atmosphere was a bit noisy, but overall a good experience. The dessert was particularly delicious!
+            </p>
+            <div class="tags">
+                <span class="tag taste">{{ '味' if request.query_params.get('lang') == 'ja' else 'Taste' }}</span>
+                <span class="tag service">{{ 'サービス' if request.query_params.get('lang') == 'ja' else 'Service' }}</span>
+            </div>
+            <div class="reply-section">
+                <div class="reply-header">
+                    <span class="reply-status status-pending">
+                        ⏳ {{ '返信待ち' if request.query_params.get('lang') == 'ja' else 'Pending' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review 3 -->
+        <div class="review-card">
+            <div class="review-header">
+                <div class="reviewer-info">
+                    <span class="reviewer-name">Michael Brown</span>
+                    <span class="rating">★★★★★</span>
+                </div>
+            </div>
+            <p class="review-text">
+                Exceptional service from start to finish. The staff was attentive and the food was prepared perfectly. The wine selection was also impressive.
+            </p>
+            <div class="tags">
+                <span class="tag service">{{ 'サービス' if request.query_params.get('lang') == 'ja' else 'Service' }}</span>
+                <span class="tag taste">{{ '味' if request.query_params.get('lang') == 'ja' else 'Taste' }}</span>
+            </div>
+            <div class="reply-section">
+                <div class="reply-header">
+                    <span class="reply-status status-replied">
+                        ✅ {{ '返信済み' if request.query_params.get('lang') == 'ja' else 'Replied' }}
+                    </span>
+                </div>
+                <p class="reply-text">
+                    {{ 'ご満足いただけたようで、大変嬉しく思います。ワインのセレクションについてもお褒めいただき、ありがとうございます。またのご来店を心よりお待ちしております。' if request.query_params.get('lang') == 'ja' else 'We are thrilled to hear that you enjoyed your experience with us! Thank you for your kind words about our wine selection. We hope to welcome you back soon!' }}
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

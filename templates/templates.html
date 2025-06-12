@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Management - ZAYRO</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Template Management</h1>
+            <button class="btn btn-primary" onclick="openAddTemplateModal()">
+                <i class="fas fa-plus"></i> Add New Template
+            </button>
+        </header>
+
+        <div class="templates-grid">
+            {% for template in templates %}
+            <div class="template-card" data-template-id="{{ template.id }}">
+                <div class="template-header">
+                    <h3 class="template-name">{{ template.name }}</h3>
+                    <div class="template-status">
+                        <label class="switch">
+                            <input type="checkbox" 
+                                   {% if template.active %}checked{% endif %}
+                                   onchange="toggleTemplateStatus('{{ template.id }}', this.checked)">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="status-label">{{ 'Active' if template.active else 'Inactive' }}</span>
+                    </div>
+                </div>
+                
+                <div class="template-tags">
+                    {% for tag in template.tags %}
+                    <span class="tag" style="background-color: {{ tag.color }}">
+                        {{ tag.name }}
+                    </span>
+                    {% endfor %}
+                </div>
+                
+                <p class="template-content">{{ template.content }}</p>
+                
+                <div class="template-actions">
+                    <button class="btn btn-edit" onclick="editTemplate('{{ template.id }}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-delete" onclick="deleteTemplate('{{ template.id }}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- テンプレート追加/編集モーダル -->
+    <div id="templateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Template</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="templateForm" onsubmit="handleTemplateSubmit(event)">
+                <input type="hidden" id="templateId">
+                <div class="form-group">
+                    <label for="templateName">Template Name</label>
+                    <input type="text" id="templateName" required>
+                </div>
+                <div class="form-group">
+                    <label for="templateTags">Tags</label>
+                    <select id="templateTags" multiple required>
+                        {% for tag in tags %}
+                        <option value="{{ tag.id }}" data-color="{{ tag.color }}">
+                            {{ tag.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="templateContent">Content</label>
+                    <textarea id="templateContent" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="templateActive" checked>
+                        Active
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 削除確認モーダル -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <p>Are you sure you want to delete this template?</p>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        let currentTemplateId = null;
+
+        // Select2の初期化
+        $(document).ready(function() {
+            $('#templateTags').select2({
+                theme: 'classic',
+                placeholder: 'Select tags',
+                allowClear: true,
+                templateResult: formatTagOption,
+                templateSelection: formatTagOption
+            });
+        });
+
+        function formatTagOption(tag) {
+            if (!tag.id) return tag.text;
+            const color = $(tag.element).data('color');
+            return $(`<span><span class="tag-option" style="background-color: ${color}"></span>${tag.text}</span>`);
+        }
+
+        // モーダル制御
+        function openAddTemplateModal() {
+            document.getElementById('modalTitle').textContent = 'Add New Template';
+            document.getElementById('templateForm').reset();
+            document.getElementById('templateId').value = '';
+            $('#templateTags').val(null).trigger('change');
+            document.getElementById('templateModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('templateModal').style.display = 'none';
+        }
+
+        function openDeleteModal(templateId) {
+            currentTemplateId = templateId;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            currentTemplateId = null;
+        }
+
+        // テンプレート編集
+        async function editTemplate(templateId) {
+            try {
+                const response = await fetch(`/api/templates/${templateId}`);
+                const template = await response.json();
+                
+                document.getElementById('modalTitle').textContent = 'Edit Template';
+                document.getElementById('templateId').value = template.id;
+                document.getElementById('templateName').value = template.name;
+                document.getElementById('templateContent').value = template.content;
+                document.getElementById('templateActive').checked = template.active;
+                
+                $('#templateTags').val(template.tags.map(t => t.id)).trigger('change');
+                
+                document.getElementById('templateModal').style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching template:', error);
+                alert('Failed to load template data');
+            }
+        }
+
+        // テンプレート削除
+        async function deleteTemplate(templateId) {
+            openDeleteModal(templateId);
+        }
+
+        async function confirmDelete() {
+            if (!currentTemplateId) return;
+
+            try {
+                const response = await fetch(`/api/templates/${currentTemplateId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const templateCard = document.querySelector(`[data-template-id="${currentTemplateId}"]`);
+                    templateCard.remove();
+                    closeDeleteModal();
+                } else {
+                    throw new Error('Failed to delete template');
+                }
+            } catch (error) {
+                console.error('Error deleting template:', error);
+                alert('Failed to delete template');
+            }
+        }
+
+        // ステータス切り替え
+        async function toggleTemplateStatus(templateId, active) {
+            try {
+                const response = await fetch(`/api/templates/${templateId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ active })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update template status');
+                }
+
+                const statusLabel = document.querySelector(`[data-template-id="${templateId}"] .status-label`);
+                statusLabel.textContent = active ? 'Active' : 'Inactive';
+            } catch (error) {
+                console.error('Error updating template status:', error);
+                alert('Failed to update template status');
+            }
+        }
+
+        // フォーム送信
+        async function handleTemplateSubmit(event) {
+            event.preventDefault();
+
+            const templateId = document.getElementById('templateId').value;
+            const templateData = {
+                name: document.getElementById('templateName').value,
+                tags: $('#templateTags').val(),
+                content: document.getElementById('templateContent').value,
+                active: document.getElementById('templateActive').checked
+            };
+
+            try {
+                const url = templateId ? `/api/templates/${templateId}` : '/api/templates';
+                const method = templateId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(templateData)
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Failed to save template');
+                }
+            } catch (error) {
+                console.error('Error saving template:', error);
+                alert('Failed to save template');
+            }
+        }
+    </script>
+</body>
+</html> 
