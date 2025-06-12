@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUSHI REPUBLIC - Reviews</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo-container">
+                <img src="assets/logo.svg" alt="SUSHI REPUBLIC" class="logo">
+            </div>
+            <h1>SUSHI REPUBLIC</h1>
+            <p class="subtitle">Authentic Japanese Dining Experience</p>
+        </header>
+
+        <main class="reviews-container">
+            <div class="reviews" id="reviews">
+                <!-- Reviews will be loaded from JSON -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Load and display reviews
+        fetch('data/reviews.json')
+            .then(response => response.json())
+            .then(data => {
+                const reviewsContainer = document.getElementById('reviews');
+                data.reviews.forEach(review => {
+                    const reviewCard = document.createElement('div');
+                    reviewCard.className = 'review-card';
+                    reviewCard.innerHTML = `
+                        <div class="review-header">
+                            <div class="reviewer-info">
+                                <span class="reviewer-name">${review.name}</span>
+                                <span class="review-date">${review.date}</span>
+                            </div>
+                            <div class="rating">
+                                ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                            </div>
+                        </div>
+                        <p class="review-text">${review.comment}</p>
+                    `;
+                    reviewsContainer.appendChild(reviewCard);
+                });
+            })
+            .catch(error => console.error('Error loading reviews:', error));
+    </script>
+</body>
+
+</html>

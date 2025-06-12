@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag Management - ZAYRO</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Tag Management</h1>
+            <button class="btn btn-primary" onclick="openAddTagModal()">
+                <i class="fas fa-plus"></i> Add New Tag
+            </button>
+        </header>
+
+        <div class="tags-grid">
+            {% for tag in tags %}
+            <div class="tag-card" data-tag-id="{{ tag.id }}">
+                <div class="tag-header">
+                    <div class="color-chip" style="background-color: {{ tag.color }}"></div>
+                    <h3 class="tag-name">{{ tag.name }}</h3>
+                </div>
+                <p class="tag-description">{{ tag.description }}</p>
+                <div class="tag-actions">
+                    <button class="btn btn-edit" onclick="editTag('{{ tag.id }}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-delete" onclick="deleteTag('{{ tag.id }}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- タグ追加/編集モーダル -->
+    <div id="tagModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Tag</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="tagForm" onsubmit="handleTagSubmit(event)">
+                <input type="hidden" id="tagId">
+                <div class="form-group">
+                    <label for="tagName">Tag Name</label>
+                    <input type="text" id="tagName" required>
+                </div>
+                <div class="form-group">
+                    <label for="tagColor">Color</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="tagColor" required>
+                        <input type="text" id="colorCode" placeholder="#000000">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tagDescription">Description</label>
+                    <textarea id="tagDescription" required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 削除確認モーダル -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <p>Are you sure you want to delete this tag?</p>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTagId = null;
+
+        // モーダル制御
+        function openAddTagModal() {
+            document.getElementById('modalTitle').textContent = 'Add New Tag';
+            document.getElementById('tagForm').reset();
+            document.getElementById('tagId').value = '';
+            document.getElementById('tagModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('tagModal').style.display = 'none';
+        }
+
+        function openDeleteModal(tagId) {
+            currentTagId = tagId;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            currentTagId = null;
+        }
+
+        // タグ編集
+        async function editTag(tagId) {
+            try {
+                const response = await fetch(`/api/tags/${tagId}`);
+                const tag = await response.json();
+                
+                document.getElementById('modalTitle').textContent = 'Edit Tag';
+                document.getElementById('tagId').value = tag.id;
+                document.getElementById('tagName').value = tag.name;
+                document.getElementById('tagColor').value = tag.color;
+                document.getElementById('colorCode').value = tag.color;
+                document.getElementById('tagDescription').value = tag.description;
+                
+                document.getElementById('tagModal').style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching tag:', error);
+                alert('Failed to load tag data');
+            }
+        }
+
+        // タグ削除
+        async function deleteTag(tagId) {
+            openDeleteModal(tagId);
+        }
+
+        async function confirmDelete() {
+            if (!currentTagId) return;
+
+            try {
+                const response = await fetch(`/api/tags/${currentTagId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const tagCard = document.querySelector(`[data-tag-id="${currentTagId}"]`);
+                    tagCard.remove();
+                    closeDeleteModal();
+                } else {
+                    throw new Error('Failed to delete tag');
+                }
+            } catch (error) {
+                console.error('Error deleting tag:', error);
+                alert('Failed to delete tag');
+            }
+        }
+
+        // フォーム送信
+        async function handleTagSubmit(event) {
+            event.preventDefault();
+
+            const tagId = document.getElementById('tagId').value;
+            const tagData = {
+                name: document.getElementById('tagName').value,
+                color: document.getElementById('tagColor').value,
+                description: document.getElementById('tagDescription').value
+            };
+
+            try {
+                const url = tagId ? `/api/tags/${tagId}` : '/api/tags';
+                const method = tagId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(tagData)
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Failed to save tag');
+                }
+            } catch (error) {
+                console.error('Error saving tag:', error);
+                alert('Failed to save tag');
+            }
+        }
+
+        // カラーピッカー連動
+        document.getElementById('tagColor').addEventListener('input', function(e) {
+            document.getElementById('colorCode').value = e.target.value;
+        });
+
+        document.getElementById('colorCode').addEventListener('input', function(e) {
+            const color = e.target.value;
+            if (/^#[0-9A-F]{6}$/i.test(color)) {
+                document.getElementById('tagColor').value = color;
+            }
+        });
+    </script>
+</body>
+</html> 
+</html> 
